@@ -2,13 +2,11 @@
 #include <pybind11/numpy.h>
 #include <cmath>
 #include <iostream>
+#include <algorithm>
 
 namespace py = pybind11;
 
-
-void softmax_regression_epoch_cpp(const float *X, const unsigned char *y,
-								  float *theta, size_t m, size_t n, size_t k,
-								  float lr, size_t batch)
+void softmax_regression_epoch_cpp(const float *X, const unsigned char *y, float *theta, size_t m, size_t n, size_t k, float lr, size_t batch)
 {
     /**
      * A C++ version of the softmax regression epoch code.  This should run a
@@ -33,34 +31,44 @@ void softmax_regression_epoch_cpp(const float *X, const unsigned char *y,
      */
 
     /// BEGIN YOUR CODE
-
+    for (int i = 0; i < m; i += batch)
+    {
+        int this_batch = std::min()
+        auto this_batch_start = X + i * n;
+        auto this_batch_end = X + batch * n;
+        if m - i < batch:
+            this_batch = m - i 
+        this_X = X[i:(i + this_batch), :]
+        this_y = y[i:(i + this_batch)]
+    }
     /// END YOUR CODE
 }
-
 
 /**
  * This is the pybind11 code that wraps the function above.  It's only role is
  * wrap the function above in a Python module, and you do not need to make any
  * edits to the code
  */
-PYBIND11_MODULE(simple_ml_ext, m) {
-    m.def("softmax_regression_epoch_cpp",
-    	[](py::array_t<float, py::array::c_style> X,
+PYBIND11_MODULE(simple_ml_ext, m)
+{
+    m.def(
+        "softmax_regression_epoch_cpp",
+        [](py::array_t<float, py::array::c_style> X,
            py::array_t<unsigned char, py::array::c_style> y,
            py::array_t<float, py::array::c_style> theta,
            float lr,
-           int batch) {
-        softmax_regression_epoch_cpp(
-        	static_cast<const float*>(X.request().ptr),
-            static_cast<const unsigned char*>(y.request().ptr),
-            static_cast<float*>(theta.request().ptr),
-            X.request().shape[0],
-            X.request().shape[1],
-            theta.request().shape[1],
-            lr,
-            batch
-           );
-    },
-    py::arg("X"), py::arg("y"), py::arg("theta"),
-    py::arg("lr"), py::arg("batch"));
+           int batch)
+        {
+            softmax_regression_epoch_cpp(
+                static_cast<const float *>(X.request().ptr),
+                static_cast<const unsigned char *>(y.request().ptr),
+                static_cast<float *>(theta.request().ptr),
+                X.request().shape[0],
+                X.request().shape[1],
+                theta.request().shape[1],
+                lr,
+                batch);
+        },
+        py::arg("X"), py::arg("y"), py::arg("theta"),
+        py::arg("lr"), py::arg("batch"));
 }
