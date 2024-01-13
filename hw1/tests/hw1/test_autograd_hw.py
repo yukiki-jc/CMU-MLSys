@@ -438,10 +438,15 @@ def submit_forward():
 
 
 def gradient_check(f, *args, tol=1e-6, backward=False, **kwargs):
+    # in this function, the delta is [0, 0, 1, ...], 
+    # 理解：在 numerical checking 中，theta看作是一个一维向量（矩阵的 flat 版本），然后这里的 flat 就是对某一个位置 j 加上 eps，计算出的近似梯度也是 y 对这个位置 j 的元素的求导。
+    # delta.T * grad 就等于 grad 中这个位置 j 的元素，即下面的 compute_grads 中这个位置 j 的元素
+    
+    # y = sum(f([ ... ]))，这里的输入就是矩阵的 flat 
     eps = 1e-4
     numerical_grads = [np.zeros(a.shape) for a in args]
     for i in range(len(args)):
-        for j in range(args[i].realize_cached_data().size):
+        for j in range(args[i].realize_cached_data().size): # size is the total number of elments in array
             args[i].realize_cached_data().flat[j] += eps
             f1 = float(f(*args, **kwargs).numpy().sum())
             args[i].realize_cached_data().flat[j] -= 2 * eps
