@@ -259,7 +259,7 @@ class Summation(TensorOp):
         a = node.inputs[0]
         keep_dim_shape = list(a.shape)
         for i, shape in enumerate(a.shape):
-            if i in self.axes:
+            if self.axes == None or i in self.axes:
                 keep_dim_shape[i] = 1  
         keep_dim_out_grad = reshape(out_grad, keep_dim_shape) 
         return broadcast_to(keep_dim_out_grad, a.shape)
