@@ -119,7 +119,30 @@ def nn_epoch(X, y, W1, W2, lr=0.1, batch=100):
     """
 
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    m = X.shape[0]
+    for i in range(0, m, batch):
+        this_batch = batch
+        if m - i < batch:
+            this_batch = m - i 
+        this_X = X[i:(i + this_batch), :]
+        this_y = y[i:(i + this_batch)]
+        one_hot = np.eye(W2.shape[1])[this_y]
+        X_batch = ndl.Tensor(this_X)
+        y_batch = ndl.Tensor(one_hot) # one_hot y   
+        Z1 = ndl.matmul(X_batch, W1) # m * d, 
+        layer_1_output = ndl.relu(Z1)
+        layer_2_output = ndl.matmul(layer_1_output, W2)
+        loss = softmax_loss(layer_2_output, y_batch)
+        loss.backward()
+         # m * k
+        
+        
+        W1_updated = W1.numpy()- lr * W1.grad.numpy() 
+        W2_updated = W2.numpy()- lr * W2.grad.numpy()
+        W1 = ndl.Tensor(W1_updated)
+        W2 = ndl.Tensor(W2_updated)
+    return W1, W2 
+    # raise NotImplementedError()
     ### END YOUR SOLUTION
 
 

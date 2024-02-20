@@ -246,7 +246,7 @@ def broadcast_to(a, shape):
 class Summation(TensorOp):
     def __init__(self, axes: Optional[tuple] = None):
         self.axes = axes
-    # 这里的 axes 
+    # 这里的 axes 默认就是 keep dim的
     def compute(self, a):
         ### BEGIN YOUR SOLUTION
         # raise NotImplementedError()
@@ -376,7 +376,11 @@ class ReLU(TensorOp):
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        # raise NotImplementedError()
+        a = node.numpy() 
+        mask = Tensor(a > 0)
+        
+        return out_grad * mask
         ### END YOUR SOLUTION
 
 
