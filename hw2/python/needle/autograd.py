@@ -13,10 +13,9 @@ TENSOR_COUNTER = 0
 
 # NOTE: we will import numpy as the array_api
 # as the backend for our computations, this line will change in later homeworks
-
 import numpy as array_api
-NDArray = numpy.ndarray
 
+NDArray = numpy.ndarray
 
 
 class Op:
@@ -37,7 +36,7 @@ class Op:
         -------
         output: nd.array
             Array output of the operation
-
++
         """
         raise NotImplementedError()
 
@@ -91,11 +90,11 @@ class Value:
     """A value in the computational graph."""
 
     # trace of computational graph
-    op: Optional[Op]
-    inputs: List["Value"]
+    op: Optional[Op]  # the operations that is used to compute this Value
+    inputs: List["Value"] # the operands that are used for the Op
     # The following fields are cached fields for
     # dynamic computation
-    cached_data: NDArray
+    cached_data: NDArray # the actual value of Value object
     requires_grad: bool
 
     def realize_cached_data(self):
@@ -199,7 +198,7 @@ class Tensor(Value):
         array,
         *,
         device: Optional[Device] = None,
-        dtype=None,
+        dtype="float32",
         requires_grad=True,
         **kwargs
     ):
@@ -379,9 +378,17 @@ def compute_gradient_of_variables(output_tensor, out_grad):
 
     # Traverse graph in reverse topological order given the output_node that we are taking gradient wrt.
     reverse_topo_order = list(reversed(find_topo_sort([output_tensor])))
-
+    for node in reverse_topo_order:
+        node.grad = sum_node_list(node_to_output_grads_list[node])
+        for i, input_node in enumerate(node.inputs):
+            self_grad = node.op.gradient_as_tuple(node.grad, node)[i]
+            if input_node in node_to_output_grads_list:
+                node_to_output_grads_list[input_node].append(self_grad)
+            else: 
+                node_to_output_grads_list[input_node] = [self_grad]
+            
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    # raise NotImplementedError()
     ### END YOUR SOLUTION
 
 
@@ -394,14 +401,30 @@ def find_topo_sort(node_list: List[Value]) -> List[Value]:
     sort.
     """
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    # raise NotImplementedError()
+    visited = set()
+    topo_order = []
+    for node in node_list:
+        if node not in visited:
+            topo_sort_dfs(node, visited, topo_order)
+    return topo_order
     ### END YOUR SOLUTION
 
 
 def topo_sort_dfs(node, visited, topo_order):
     """Post-order DFS"""
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    visited.add(node)
+    if len(node.inputs) == 0:
+        topo_order.append(node)
+        return 
+    else:
+        for child in node.inputs:
+            if child not in visited:
+                topo_sort_dfs(child, visited, topo_order)
+        topo_order.append(node)
+    return
+    # raise NotImplementedError()
     ### END YOUR SOLUTION
 
 
