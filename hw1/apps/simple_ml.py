@@ -142,7 +142,8 @@ def nn_epoch(X, y, W1, W2, lr=0.1, batch=100):
         loss.backward()
          # m * k
         
-        # 这里要用 numpy，如果直接用 Tensor，会创建冗余的计算图！
+        # 这里要用 data，如果直接用 Tensor，会创建冗余的计算图！
+        # 此时，等号右边都是 requaire grad = False,因此计算出来的结果也是 require grad = False，不会有计算图
         W1 = W1.data - lr * W1.grad.data
         W2 = W2.data - lr * W2.grad.data
         # W1 = ndl.Tensor(W1_updated)

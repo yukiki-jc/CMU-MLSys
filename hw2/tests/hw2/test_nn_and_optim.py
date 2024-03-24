@@ -216,6 +216,7 @@ def learn_model_1d(feature_size, nclasses, _model, optimizer, epochs=1, **kwargs
             grad_before = model.parameters()[0].grad.detach().cached_data
             opt.step()
             grad_after = model.parameters()[0].grad.detach().cached_data
+            
             np.testing.assert_allclose(
                 grad_before,
                 grad_after,
