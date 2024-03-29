@@ -2215,6 +2215,8 @@ def test_random_crop():
             [[0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0]],
         ]
     )
+    print(a.shape)
+    print(b.shape)
     np.testing.assert_allclose(tform(a), b)
 
     tform = ndl.data.RandomCrop(4)

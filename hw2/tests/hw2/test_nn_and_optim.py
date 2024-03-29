@@ -395,6 +395,7 @@ def mlp_resnet_forward(dim, hidden_dim, num_blocks, num_classes, norm, drop_prob
     output_tensor = MLPResNet(
         dim, hidden_dim, num_blocks, num_classes, norm, drop_prob
     )(input_tensor)
+    
     return output_tensor.numpy()
 
 
@@ -404,7 +405,6 @@ def train_epoch_1(hidden_dim, batch_size, optimizer, **kwargs):
         "./data/train-images-idx3-ubyte.gz", "./data/train-labels-idx1-ubyte.gz"
     )
     train_dataloader = ndl.data.DataLoader(dataset=train_dataset, batch_size=batch_size)
-
     model = MLPResNet(784, hidden_dim)
     opt = optimizer(model.parameters(), **kwargs)
     model.eval()

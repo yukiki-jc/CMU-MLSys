@@ -20,7 +20,7 @@ class SGD(Optimizer):
         super().__init__(params)
         self.lr = lr
         self.momentum = momentum
-        self.u = {}
+        self.u = [ndl.zeros_like(p) for p in self.params]
         self.weight_decay = weight_decay
 
     def step(self):
@@ -31,10 +31,7 @@ class SGD(Optimizer):
                 continue  
             # 注意数据类型转换
             grad_data = ndl.Tensor(p.grad.numpy(), dtype="float32", requires_grad=False) + self.weight_decay * p.data
-            if idx in self.u:
-                self.u[idx] = self.momentum * self.u[idx] + (1 - self.momentum) * grad_data
-            else: 
-                self.u[idx] = (1 - self.momentum) * grad_data
+            self.u[idx] = self.momentum * self.u[idx] + (1 - self.momentum) * grad_data
             p.data = p.data - self.lr * self.u[idx]
         
         ### END YOUR SOLUTION
@@ -66,29 +63,22 @@ class Adam(Optimizer):
         self.weight_decay = weight_decay
         self.t = 0
 
-        self.m = {}
-        self.v = {}
+        self.m = [ndl.zeros_like(p) for p in self.params]
+        self.v = [ndl.zeros_like(p) for p in self.params]
 
     def step(self):
         ### BEGIN YOUR SOLUTION
         # raise NotImplementedError()
         self.t = self.t + 1
         for idx, p in enumerate(self.params): 
-      
             if p.grad is None: 
                 continue  
             # 注意数据类型转换
             grad_data = ndl.Tensor(p.grad.numpy(), dtype="float32", requires_grad=False) + self.weight_decay * p.data
-            print("grad data require grad: ", grad_data.requires_grad)
-            if idx in self.m:
-                self.m[idx] = self.beta1 * self.m[idx] + (1 - self.beta1) * grad_data
-            else: 
-                self.m[idx] = (1 - self.beta1) * grad_data
-            
-            if idx in self.v:
-                self.v[idx] = self.beta2 * self.v[idx] + (1 - self.beta2) * (grad_data ** 2)
-            else: 
-                self.v[idx] = (1 - self.beta2) * (grad_data ** 2)
+            self.m[idx] = self.beta1 * self.m[idx] + (1 - self.beta1) * grad_data
+            self.v[idx] = self.beta2 * self.v[idx] + (1 - self.beta2) * (grad_data ** 2)
+            # else: 
+                # self.v[idx] = (1 - self.beta2) * (grad_data ** 2)
             m_hat = self.m[idx] / (1 - self.beta1 ** self.t)
             v_hat = self.v[idx] / (1 - self.beta2 ** self.t)
             

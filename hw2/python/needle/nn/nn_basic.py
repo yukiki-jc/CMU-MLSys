@@ -90,7 +90,7 @@ class Linear(Module):
         if bias:
             self.bias = Parameter(init.init_initializers.kaiming_uniform(out_features, 1, dtype=dtype, device=device, requires_grad=True).reshape((1, out_features)))
         else: 
-            self.bias = Parameter(init.init_basic.constant(1,out_features, c=0, device=device, dtype=dtype, requires_grad=False))
+            self.bias = Parameter(init.init_basic.constant(1, out_features, c=0, device=device, dtype=dtype, requires_grad=False))
         ### BEGIN YOUR SOLUTION
         # raise NotImplementedError()
         ### END YOUR SOLUTION
@@ -160,8 +160,7 @@ class BatchNorm1d(Module):
         self.weight = Parameter(init.ones(dim, device=device, dtype=dtype, requires_grad=True))
         self.bias = Parameter(init.zeros(dim, device=device, dtype=dtype, requires_grad=True))
         self.running_mean = init.zeros(dim, device=device, dtype=dtype, requires_grad=False)
-        self.running_var = init.ones(dim, device=device, dtype=dtype, requires_grad=False)
-        self.momentum = momentum
+        self.running_var = init.ones(dim, device=device, dtype=dtype, requires_grad=False) 
         ### BEGIN YOUR SOLUTION
         # raise NotImplementedError()
         ### END YOUR SOLUTION
@@ -237,7 +236,10 @@ class Dropout(Module):
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
         # raise NotImplementedError()
-        mask = init.randb(*(x.shape), p=self.p, device=x.device)
+        if self.training == False:
+            return x
+        # p is the probability for 1, so should be 1 - self.p here
+        mask = init.randb(*(x.shape), p=1 - self.p, device=x.device)
         mask = mask / (1 - self.p)
         return x * mask
         ### END YOUR SOLUTION
