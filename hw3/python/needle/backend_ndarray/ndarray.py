@@ -112,6 +112,7 @@ class NDArray:
             self._init(array)
         else:
             # see if we can create a numpy array from input
+            
             array = NDArray(np.array(other), device=device)
             self._init(array)
 
@@ -209,6 +210,8 @@ class NDArray:
 
     def compact(self):
         """Convert a matrix to be compact"""
+        # 如果没有这个函数，那么每次计算两个 matrix 的时候会把所有元素都做计算（即使这两个 matrix 是 sliced 的）。计算的时候是不管 matrix 的形状，只是用 handle
+        # 当然，也有不考虑 compact 的计算实现，即直接对原始的 memory 做操作，利用不同的 stride
         if self.is_compact():
             return self
         else:
@@ -246,8 +249,21 @@ class NDArray:
             NDArray : reshaped array; this will point to thep
         """
 
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        ### BEGIN YOUR SOLUTION 
+        total_dims = 1 
+        for s in new_shape:
+            total_dims *= s 
+        cur_dims = 1 
+        for s in self.shape:
+            cur_dims *= s 
+        if cur_dims != total_dims:
+            raise RuntimeError("Not the same element number!")
+        # raise NotImplementedError()
+        new_strides = [1]
+        for idx, s in enumerate(new_shape[:0:-1]): 
+            new_strides.append(new_strides[idx] * s)
+        new_strides.reverse()
+        return self.as_strided(tuple(new_shape), tuple(new_strides))
         ### END YOUR SOLUTION
 
     def permute(self, new_axes):
@@ -272,7 +288,13 @@ class NDArray:
         """
 
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        new_strides = list(self.strides)
+        for i, s in enumerate(new_axes):
+            new_strides[i] = self.strides[s]
+        new_shape = list(self.shape) 
+        for i, s in enumerate(new_axes):
+            new_shape[i] = self.shape[s]
+        return self.as_strided(tuple(new_shape), tuple(new_strides))
         ### END YOUR SOLUTION
 
     def broadcast_to(self, new_shape):
@@ -296,7 +318,22 @@ class NDArray:
         """
 
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        shape = list(self.shape)
+        new_strides = list(self.strides)   
+        diff_len = len(new_shape) - len(shape)
+        for _ in range(diff_len):
+            shape.insert(0, 1)
+            new_strides.insert(0, 0)
+         
+            
+        for i, s in enumerate(shape):
+            if shape[i] != 1 and new_shape[i] != shape[i]:
+                raise AssertionError    
+            elif shape[i] == 1:
+                new_strides[i] = 0 # 把为 1 的维度的 stride 改为0
+
+        return NDArray.make(new_shape, tuple(new_strides), device=self.device, handle=self._handle)
+        
         ### END YOUR SOLUTION
 
     ### Get and set elements
@@ -363,7 +400,25 @@ class NDArray:
         assert len(idxs) == self.ndim, "Need indexes equal to number of dimensions"
 
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        flat_dims = [1]
+        shape = self.shape
+        for idx, s in enumerate(shape[:0:-1]):  # flattened dims of each dim (2, 3, 4) -> (12, 4, 1)
+            flat_dims.append(flat_dims[idx] * s)
+        flat_dims.reverse()
+        
+        new_shape = []
+        offset = 0 
+        new_strides = list(self.strides)
+        for i, idx in enumerate(idxs):  
+            # update shape 
+            s = (idx.stop - idx.start) // idx.step
+            new_shape.append(s)
+            # update offset    
+            offset += idx.start * flat_dims[i]
+            # update stride 
+            new_strides[i] += idx.step - 1
+            
+        return NDArray.make(tuple(new_shape), tuple(new_strides), device=self.device, handle=self._handle, offset=offset)
         ### END YOUR SOLUTION
 
     def __setitem__(self, idxs, other):
