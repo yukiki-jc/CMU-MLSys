@@ -250,13 +250,7 @@ class NDArray:
         """
 
         ### BEGIN YOUR SOLUTION 
-        total_dims = 1 
-        for s in new_shape:
-            total_dims *= s 
-        cur_dims = 1 
-        for s in self.shape:
-            cur_dims *= s 
-        if cur_dims != total_dims:
+        if prod(new_shape) != prod(self.shape):
             raise RuntimeError("Not the same element number!")
         # raise NotImplementedError()
         new_strides = [1]
@@ -286,7 +280,7 @@ class NDArray:
             to the same memory as the original NDArray (i.e., just shape and
             strides changed).
         """
-
+        assert len(new_axes) == len(self.shape)
         ### BEGIN YOUR SOLUTION
         new_strides = list(self.strides)
         for i, s in enumerate(new_axes):
@@ -400,24 +394,18 @@ class NDArray:
         assert len(idxs) == self.ndim, "Need indexes equal to number of dimensions"
 
         ### BEGIN YOUR SOLUTION
-        flat_dims = [1]
-        shape = self.shape
-        for idx, s in enumerate(shape[:0:-1]):  # flattened dims of each dim (2, 3, 4) -> (12, 4, 1)
-            flat_dims.append(flat_dims[idx] * s)
-        flat_dims.reverse()
-        
         new_shape = []
         offset = 0 
         new_strides = list(self.strides)
         for i, idx in enumerate(idxs):  
             # update shape 
-            s = (idx.stop - idx.start) // idx.step
+            s = math.ceil((idx.stop - idx.start) / idx.step)
+            # s += 1 if 
             new_shape.append(s)
             # update offset    
-            offset += idx.start * flat_dims[i]
+            offset += idx.start * self.strides[i] # 这里是乘 stride 不是乘 flat dim！
             # update stride 
-            new_strides[i] += idx.step - 1
-            
+            new_strides[i] += (idx.step - 1) * self.strides[i] # 新的矩阵中跨行一行，相当与原来矩阵跨 step - 1 行
         return NDArray.make(tuple(new_shape), tuple(new_strides), device=self.device, handle=self._handle, offset=offset)
         ### END YOUR SOLUTION
 
