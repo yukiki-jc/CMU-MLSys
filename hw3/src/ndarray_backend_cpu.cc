@@ -46,17 +46,18 @@ void Fill(AlignedArray* out, scalar_t val) {
 void loop_uncompact_fill(const AlignedArray& a, AlignedArray* out, std::vector<int32_t> shape,
              std::vector<int32_t> strides, size_t offset, bool compact_out,  scalar_t* val) {
   int cnt = 0;
-  int stride_len = strides.size();
-  std::vector<int32_t> carry(stride_len, 0);
-  int last_dim = strides[stride_len - 1];
+  int dim_num = strides.size();
   int total_dims = 1;
-  for (int i = 0; i < stride_len; i++) {
+  for (int i = 0; i < dim_num; i++) {
     total_dims *= shape[i];
   }
   while (cnt < total_dims) {
     size_t idx = offset;
-    for (int i = 0; i < stride_len; i++) {
-      idx += strides[i] * carry[i]; 
+    int q = cnt;
+    for (int i = dim_num - 1; i >= 0 ; i--) {
+      int res = q % shape[i];
+      idx += res * strides[i];
+      q = q / shape[i];
     }
     if (compact_out) {
       if (val != nullptr) 
@@ -71,19 +72,6 @@ void loop_uncompact_fill(const AlignedArray& a, AlignedArray* out, std::vector<i
         out->ptr[idx] = a.ptr[cnt];
     }
     cnt++;
-    int carry_bit = 0;
-    for (int i = stride_len - 1; i >= 0; i--) {
-      if (i == stride_len - 1)
-        carry[i]++;
-      if (carry_bit == 1) {
-        carry[i]++;
-        carry_bit = 0;
-      }
-      if (carry[i] == shape[i]) {
-        carry_bit = 1;
-        carry[i] = 0;
-      }
-    }
   } 
 }
 
