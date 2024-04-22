@@ -13,7 +13,7 @@ namespace cuda {
 
 #define BASE_THREAD_NUM 256
 
-#define TILE 4
+#define TILE 16
 typedef float scalar_t;
 const size_t ELEM_SIZE = sizeof(scalar_t);
 
@@ -454,14 +454,60 @@ __global__ void MatmulKernel(const scalar_t* a, const scalar_t* b, scalar_t* out
   if (gid < out_size) {
     uint32_t i = gid / P;
     uint32_t j = gid % P;
-    out[gid] = 0;
+    scalar_t out_result = 0;
     for (int k = 0; k < N; k++) {
-      out[gid] += a[i * N + k] * b[k * P + j];
+      out_result += a[i * N + k] * b[k * P + j];
     }
+    out[gid] = out_result;
   }
-  
-  
 }
+
+// CudaDims CudaMatmulTiledDim(uint32_t M, uint32_t P) {
+//   /**
+//    * Utility function to get cuda dimensions for 1D call
+//    */
+//   CudaDims dim;
+//   size_t num_blocks_x = (M + TILE - 1) / TILE;
+//   size_t num_blocks_y = (P + TILE - 1) / TILE;
+//   dim.block = dim3(TILE, TILE, 1);
+//   dim.grid = dim3(num_blocks_x, num_blocks_y, 1); // two dim!
+//   return dim;
+// }
+
+// __global__ void MatmulTiledKernel(const scalar_t* a, const scalar_t* b, scalar_t* out, uint32_t M, uint32_t N, uint32_t P, size_t out_size) {
+//   __shared__ float tile_a[TILE][TILE], tile_b[TILE][TILE];
+//   int block_y = blockIdx.y;
+//   int block_x = blockIdx.x;
+//   int thread_y = threadIdx.y;
+//   int thread_x = threadIdx.x;
+//   int this_tile_L = M - block_x * blockDim.x;
+//   if (thread_x >= this_tile_L)
+//     return; //这样做似乎不行，因为在最后一个 block 里，某些线程在这里 return 了，而另外一些线程还在等待这些 return 线程到达 syncthreads，这样永远都无法等到！需要特殊判断 最后一个 block，非常麻烦！
+//   float out_result = 0;
+//   for (int ko = 0; ko < N; ko += TILE) { // ko < S
+//     int this_tile_S = N - ko < TILE ? N - ko : TILE;
+//     __syncthreads();
+//     // 注意，thread Idx 对应的是最终 out 中的输出位置，在这里 share memory 时，跟 thread Idx 无关！（只是在我的设置下，他们相同
+    
+//     int outer_x = block_x * blockDim.x + thread_x;
+//     int outer_y = thread_y + ko
+//     int outer_tid_a = (block_x * blockDim.x + thread_x) * N + thread_y + ko;
+//     int outer_tid_b = (thread_y + ko) * P + block_y * blockDim.y + thread_x;
+//     if (thread_y < this_tile_S) {
+//       tile_a[thread_x][thread_y] = a[outer_tid_a];
+//       tile_b[thread_y][thread_x] = b[outer_tid_b];
+//     }
+//     __syncthreads();
+//     for (int ki = 0; ki < this_tile_S; ki++) { // ki < S
+//       out_result += tile_a[thread_x][ki] * tile_b[ki][thread_y];
+//     }
+//   }
+//   uint32_t i = block_x * blockDim.x + thread_x;
+//   uint32_t j = block_y * blockDim.y + thread_y;
+//   size_t out_idx = i * P + j;
+//   out[out_idx] = out_result;  
+// }
+  
 
 void Matmul(const CudaArray& a, const CudaArray& b, CudaArray* out, uint32_t M, uint32_t N,
             uint32_t P) {
@@ -490,6 +536,8 @@ void Matmul(const CudaArray& a, const CudaArray& b, CudaArray* out, uint32_t M, 
   /// BEGIN SOLUTION
   CudaDims dim = CudaOneDim(out->size);
   MatmulKernel<<<dim.grid, dim.block>>>(a.ptr, b.ptr, out->ptr, M, N, P, out->size);
+  // CudaDims dim = CudaMatmulTiledDim(out->size);
+  // MatmulKernel<<<dim.grid, dim.block>>>(a.ptr, b.ptr, out->ptr, M, N, P, out->size);
   /// END SOLUTION
 }
 
